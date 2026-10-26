@@ -63,6 +63,14 @@ npm run version
 **src/auto_complete.ts**
 - EditorSuggestor for autocomplete within `pseudo` code blocks
 
+**src/editor_syntax.ts**
+- Registers a CodeMirror 5 mode for `pseudo` fenced blocks
+- Applies theme-aware syntax highlighting in the editor
+- Refreshes open editors after registration or setting changes
+
+**src/pseudocode_keywords.ts**
+- Shared autocomplete keywords and paired command suggestions
+
 ### Build System
 - Uses esbuild (config in `esbuild.config.mjs`)
 - Bundles to CommonJS format targeting ES2018
@@ -81,6 +89,12 @@ npm run version
 - When `followSystemTheme` is enabled, plugin observes Obsidian theme changes
 - CSS custom properties are read from document.body and applied to rendered pseudocode
 - Observer must be detached on plugin unload to prevent memory leaks
+
+### Editor Syntax Highlighting
+- Registered via `window.CodeMirror.defineMode("pseudo", ...)`
+- Obsidian resolves fenced code block languages through the CodeMirror 5 mode registry
+- `refreshSyntaxHighlighting()` forces re-tokenization by replacing the first character with itself
+- Colors use Obsidian's native `.cm-*` token classes and theme variables
 
 ### Error Handling
 - Pseudocode rendering errors display in-block with ✖ symbol

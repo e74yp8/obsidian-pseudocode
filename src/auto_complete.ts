@@ -8,6 +8,7 @@ import {
 } from "obsidian";
 
 import { BLOCK_NAME } from "src/setting";
+import { PAIR_SUGGESTIONS, PSEUDO_KEYWORDS } from "src/pseudocode_keywords";
 
 import PseudocodePlugin from "main";
 
@@ -61,7 +62,7 @@ export class PseudocodeSuggestor extends EditorSuggest<string> {
 	): string[] | Promise<string[]> {
 		const query = context.query;
 
-		const suggestions = this.pseudocodeKeywords.filter((value) =>
+		const suggestions = PSEUDO_KEYWORDS.filter((value) =>
 			value.toLowerCase().startsWith(query.toLowerCase())
 		);
 
@@ -81,7 +82,7 @@ export class PseudocodeSuggestor extends EditorSuggest<string> {
 			const start = this.context.start;
 			const end = editor.getCursor();
 
-			const pairSuggestion = this.pairSuggestions[suggestion];
+			const pairSuggestion = PAIR_SUGGESTIONS[suggestion];
 			let insertText = suggestion;
 			if (pairSuggestion) {
 				const line = editor.getLine(start.line);
@@ -99,97 +100,4 @@ export class PseudocodeSuggestor extends EditorSuggest<string> {
 			this.close();
 		}
 	}
-
-	private pairSuggestions: Record<string, string> = {
-		"\\begin{algorithmic}": "\\end{algorithmic}",
-		"\\begin{algorithm}": "\\end{algorithm}",
-		"\\Procedure{}{}": "\\EndProcedure",
-		"\\Function{}{}": "\\EndFunction",
-		"\\For{}": "\\EndFor",
-		"\\ForAll{}": "\\EndFor",
-		"\\If{}": "\\EndIf",
-		"\\While{}": "\\EndWhile",
-		"\\Repeat": "\\Until{}",
-		// Add more pairs as needed
-	};
-
-	private pseudocodeKeywords: string[] = [
-		"\\begin{algorithmic}",
-		"\\begin{algorithm}",
-		"\\end{algorithmic}",
-		"\\end{algorithm}",
-		"\\caption{}",
-		"\\Procedure{}{}",
-		"\\EndProcedure",
-		"\\Function{}{}",
-		"\\EndFunction",
-		"\\Require",
-		"\\Ensure",
-		"\\Input",
-		"\\Output",
-		"\\State",
-		"\\Return",
-		"\\Print",
-		"\\For{}",
-		"\\ForAll{}",
-		"\\EndFor",
-		"\\If{}",
-		"\\Else",
-		"\\Elif{}",
-		"\\EndIf",
-		"\\While{}",
-		"\\EndWhile",
-		"\\Repeat",
-		"\\Continue",
-		"\\Break",
-		"\\Until{}",
-		"\\Comment{}",
-		"\\{",
-		"\\}",
-		"\\$",
-		"\\&",
-		"\\#",
-		"\\%",
-		"\\_",
-		"\\gets",
-		"\\Call{}{}",
-		"\\And",
-		"\\Or",
-		"\\Xor",
-		"\\Not",
-		"\\To",
-		"\\DownTo",
-		"\\True",
-		"\\False",
-		"\\tiny",
-		"\\scriptsize",
-		"\\footnotesize",
-		"\\small",
-		"\\normalsize",
-		"\\Large",
-		"\\Huge",
-		"\\rmfamily",
-		"\\sffamily",
-		"\\ttfamily",
-		"\\upshape",
-		"\\itshape",
-		"\\slshape",
-		"\\scshape",
-		"\\bfseries",
-		"\\mdseries",
-		"\\lfseries",
-		"\\textnormal{}",
-		"\\textrm{}",
-		"\\textsf{}",
-		"\\texttt{}",
-		"\\textup{}",
-		"\\textit{}",
-		"\\textsl{}",
-		"\\textsc{}",
-		"\\uppercase{}",
-		"\\lowercase{}",
-		"\\textbf{}",
-		"\\textmd{}",
-		"\\textlf{}",
-	];
 }

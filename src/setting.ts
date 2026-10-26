@@ -12,6 +12,7 @@ export interface PseudocodeJsSettings {
 // Setting for this plugin
 export interface PseudocodeSettings {
 	blockSize: number;
+	syntaxHighlight: boolean;
 	preambleEnabled: boolean;
 	preamblePath: string;
 	preambleLoadedNotice: boolean;
@@ -21,6 +22,7 @@ export interface PseudocodeSettings {
 
 export const DEFAULT_SETTINGS: PseudocodeSettings = {
 	blockSize: 99,
+	syntaxHighlight: true,
 	preambleEnabled: false,
 	preamblePath: "preamble.sty",
 	preambleLoadedNotice: false,

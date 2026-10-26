@@ -15,6 +15,11 @@ import {
 import { createExportButton } from "src/export_button";
 import { extractInlineMacros } from "src/inline_macro";
 import { setObserver, detachObserver, setPseudocodeTheme } from "src/theme";
+import {
+	registerPseudocodeEditorMode,
+	unregisterPseudocodeEditorMode,
+	refreshSyntaxHighlighting,
+} from "src/editor_syntax";
 
 import * as pseudocode from "pseudocode";
 
@@ -78,6 +83,8 @@ export default class PseudocodePlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
+		registerPseudocodeEditorMode(() => this.settings.syntaxHighlight);
+
 		setObserver();
 
 		if (this.settings.preambleEnabled) {
@@ -104,10 +111,14 @@ export default class PseudocodePlugin extends Plugin {
 				editor.replaceSelection(PseudocodeBlockInit);
 			},
 		});
+
+		refreshSyntaxHighlighting(this.app);
 	}
 
 	onunload() {
 		detachObserver();
+		unregisterPseudocodeEditorMode();
+		refreshSyntaxHighlighting(this.app);
 	}
 
 	async loadPreamble() {

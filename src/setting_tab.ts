@@ -1,5 +1,6 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import { setObserver, detachObserver } from "./theme";
+import { refreshSyntaxHighlighting } from "./editor_syntax";
 
 import PseudocodePlugin from "main";
 
@@ -34,6 +35,21 @@ export class PseudocodeSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.blockSize = Number(value);
 						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Syntax Highlighting")
+			.setDesc(
+				"Highlight LaTeX commands, comments, math, and numbers inside pseudo code blocks."
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.syntaxHighlight)
+					.onChange(async (value) => {
+						this.plugin.settings.syntaxHighlight = value;
+						await this.plugin.saveSettings();
+						refreshSyntaxHighlighting(this.app);
 					})
 			);
 

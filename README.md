@@ -1,7 +1,6 @@
 # Obsidian-Pseudocode
 - [Obsidian-Pseudocode](#obsidian-pseudocode)
   - [Features](#features)
-    - [Future Features](#future-features)
   - [Usage](#usage)
     - [Basic](#basic)
     - [Preamble style customization](#preamble-style-customization)
@@ -23,10 +22,7 @@ This is a plugin for [Obsidian](https://obsidian.md/) that allows you to render 
 - [Preamble style (macros) customization.](#preamble-style-customization) (Release 1.2.0 & 1.5.0)
 - [Export a LaTeX file that can be compiled, including any required additional macros.](#export-to-a-compilable-latex-file) (Release 1.3.0)
 - Pseudocode block follows Obsidian theme and supports both light and dark ones. (Release 1.6.0)
-
-### Future Features
-
-- [ ] Syntax highlighting.
+- Syntax highlighting inside `pseudo` code blocks while editing. It can be disabled in the plugin settings.
 
 ## Usage
 
