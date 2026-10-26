@@ -1,5 +1,4 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
-import { setObserver, detachObserver } from "./theme";
 import { refreshSyntaxHighlighting } from "./editor_syntax";
 
 import PseudocodePlugin from "main";
@@ -50,24 +49,6 @@ export class PseudocodeSettingTab extends PluginSettingTab {
 						this.plugin.settings.syntaxHighlight = value;
 						await this.plugin.saveSettings();
 						refreshSyntaxHighlighting(this.app);
-					})
-			);
-
-		// Instantiate Follow System Theme setting
-		new Setting(containerEl)
-			.setName("Follow System Theme")
-			.setDesc("Whether to follow the system theme.")
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.followSystemTheme)
-					.onChange(async (value) => {
-						this.plugin.settings.followSystemTheme = value;
-						if (value) {
-							setObserver();
-						} else {
-							detachObserver();
-						}
-						await this.plugin.saveSettings();
 					})
 			);
 
