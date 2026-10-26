@@ -1,7 +1,13 @@
-import { ItemView, Notice, WorkspaceLeaf } from "obsidian";
+import {
+	EditorPosition,
+	ItemView,
+	Notice,
+	WorkspaceLeaf,
+} from "obsidian";
 
 import { copyLatexToClipboard } from "src/export_button";
 import type { PseudocodeBlock } from "src/pseudocode_block";
+import { applyPreviewCursor } from "src/preview_cursor";
 import { renderPseudocodeBlock } from "src/render";
 import type { RenderPseudocodeResult } from "src/render";
 
@@ -18,6 +24,9 @@ export class PseudocodePreviewView extends ItemView {
 	private refreshAction: HTMLElement | null = null;
 	private copyAction: HTMLElement | null = null;
 	private lastResult: RenderPseudocodeResult | null = null;
+	private lastSource: string | null = null;
+	private lastSettingsKey: string | null = null;
+	private lastPreamble: string | null = null;
 
 	constructor(leaf: WorkspaceLeaf, private plugin: PseudocodePlugin) {
 		super(leaf);
@@ -73,20 +82,37 @@ export class PseudocodePreviewView extends ItemView {
 		this.copyAction?.remove();
 		this.refreshAction = null;
 		this.copyAction = null;
+		this.resetRenderCache();
 		this.contentEl.empty();
 	}
 
-	renderBlock(block: PseudocodeBlock, filePath: string): void {
-		this.lastResult = null;
+	renderBlock(
+		block: PseudocodeBlock,
+		filePath: string,
+		cursor: EditorPosition,
+		force = false
+	): void {
 		this.emptyEl.hide();
 		this.renderEl.show();
-		this.renderEl.empty();
 		this.metaEl.setText(
 			`${filePath} · lines ${block.startLine + 1}–${block.endLine + 1}`
 		);
 
+		const settingsKey = this.getSettingsKey();
+
+		if (!force && this.matchesCachedRender(block, settingsKey)) {
+			if (this.lastResult) {
+				this.applyCursor(block, cursor, this.lastResult);
+			}
+			return;
+		}
+
+		this.lastResult = null;
+		this.renderEl.empty();
+		this.rememberCachedRender(block, settingsKey);
+
 		try {
-			this.lastResult = renderPseudocodeBlock(
+			const result = renderPseudocodeBlock(
 				this.plugin,
 				block.source,
 				this.renderEl,
@@ -96,13 +122,64 @@ export class PseudocodePreviewView extends ItemView {
 					exportButton: false,
 				}
 			);
+			this.lastResult = result;
+			this.applyCursor(block, cursor, result);
 		} catch (error) {
 			this.showError((error as Error).message);
 		}
 	}
 
-	showEmpty(reason: EmptyReason): void {
+	private getSettingsKey(): string {
+		return JSON.stringify(this.plugin.settings.jsSettings) ?? "";
+	}
+
+	private matchesCachedRender(
+		block: PseudocodeBlock,
+		settingsKey: string
+	): boolean {
+		return (
+			this.lastSource === block.source &&
+			this.lastSettingsKey === settingsKey &&
+			this.lastPreamble === this.plugin.preamble
+		);
+	}
+
+	private rememberCachedRender(
+		block: PseudocodeBlock,
+		settingsKey: string
+	): void {
+		this.lastSource = block.source;
+		this.lastSettingsKey = settingsKey;
+		this.lastPreamble = this.plugin.preamble;
+	}
+
+	private resetRenderCache(): void {
 		this.lastResult = null;
+		this.lastSource = null;
+		this.lastSettingsKey = null;
+		this.lastPreamble = null;
+	}
+
+	private applyCursor(
+		block: PseudocodeBlock,
+		cursor: EditorPosition,
+		result: RenderPseudocodeResult
+	): void {
+		try {
+			applyPreviewCursor(
+				this.renderEl,
+				block,
+				result,
+				cursor,
+				this.plugin.settings.jsSettings
+			);
+		} catch (error) {
+			console.error("Failed to place preview cursor", error);
+		}
+	}
+
+	showEmpty(reason: EmptyReason): void {
+		this.resetRenderCache();
 		this.metaEl.setText(
 			reason === "unclosed"
 				? "Unclosed pseudo block"
