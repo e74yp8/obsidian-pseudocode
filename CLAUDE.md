@@ -66,6 +66,8 @@ npm run version
 **src/editor_syntax.ts**
 - Registers a CodeMirror 5 mode for `pseudo` fenced blocks
 - Applies theme-aware syntax highlighting in the editor
+- Delegates math spans to Obsidian's built-in CodeMirror 5 `stex` mode
+- Falls back to treating math as a string token when `stex` is unavailable
 - Refreshes open editors after registration or setting changes
 
 **src/pseudocode_keywords.ts**
