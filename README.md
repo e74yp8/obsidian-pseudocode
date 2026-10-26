@@ -9,6 +9,7 @@
       - [Use in-block preamble](#use-in-block-preamble)
       - [Supported macros](#supported-macros)
     - [Export to a compilable LaTeX file](#export-to-a-compilable-latex-file)
+    - [Sidebar preview](#sidebar-preview)
   - [Installation](#installation)
   - [Credits](#credits)
 
@@ -22,6 +23,7 @@ This is a plugin for [Obsidian](https://obsidian.md/) that allows you to render 
 - Auto-completion inside `pseudo` code block. (Release 1.1.0)
 - [Preamble style (macros) customization.](#preamble-style-customization) (Release 1.2.0 & 1.5.0)
 - [Export a LaTeX file that can be compiled, including any required additional macros.](#export-to-a-compilable-latex-file) (Release 1.3.0)
+- [Sidebar preview that follows the pseudo block under your cursor.](#sidebar-preview)
 - Pseudocode block automatically follows the Obsidian theme and supports both light and dark modes. PDF exports use a white background with black text.
 
 ### Future Features
@@ -97,6 +99,12 @@ Currently supported macros can be found at [this link](https://katex.org/docs/su
 ### Export to a compilable LaTeX file
 
 You can easily export a compilable LaTeX file by clicking the `Export to clipboard` button at the bottom right corner for each pseudocode block. The plugin will automatically generate a compilable LaTeX file, including any required additional macros, to your clipboard.
+
+### Sidebar preview
+
+Open the command palette and run `Pseudocode: Open pseudocode preview` (or click the ribbon icon) to open the preview pane. The preview follows the `pseudo` code block under your cursor and updates as you edit. When the cursor is outside a block, the pane shows an empty state.
+
+Use the refresh action to re-render manually, and the copy action to copy the current block as a compilable LaTeX document.
 
 
 ## Installation

@@ -24,16 +24,18 @@ npm run version
 ### Plugin Entry Point
 - `main.ts`: Core plugin class (`PseudocodePlugin`)
   - Registers markdown code block processor for `pseudo` language
+  - Registers the sidebar preview controller
   - Manages settings and preamble loading
 
 ### Core Processing Flow
 1. User creates a code block with `pseudo` language specifier
-2. `pseudocodeHandler()` in main.ts processes the block:
+2. `pseudocodeHandler()` in main.ts delegates to `renderPseudocodeBlock()`:
    - Extracts inline macros (before `\begin{algorithm}`)
    - Combines with global preamble if enabled
    - Injects preamble into all math expressions (`$...$`)
    - Renders using pseudocode.js library
-   - Adds export button
+   - Adds export button when requested
+3. The sidebar preview finds the `pseudo` fenced block containing the cursor and renders it with the same shared renderer
 
 ### Key Modules
 
@@ -46,10 +48,29 @@ npm run version
 - Handles `\DeclarePairedDelimiter`, `\DeclareMathOperator*`, `\DeclareMathOperator`
 - Validates macros using KaTeX parser and converts `\newcommand` to `\renewcommand` when redefining
 
+**src/render.ts**
+- Shared renderer used by code blocks and the sidebar preview
+- Extracts inline macros, injects the preamble, and renders with pseudocode.js
+- Optionally adds the export button
+
+**src/pseudocode_block.ts**
+- Locates the `pseudo` fenced block containing the editor cursor or selection
+- Supports backtick and tilde fences, blockquotes, and unclosed blocks
+
+**src/preview_view.ts**
+- Sidebar `ItemView` for the pseudocode preview
+- Shows block metadata, refresh action, copy LaTeX action, empty state, and render errors
+
+**src/preview_controller.ts**
+- Opens and tracks the sidebar preview
+- Registers the command and ribbon icon
+- Follows the active Markdown editor and refreshes on cursor or document changes
+
 **src/export_button.ts**
 - Creates "Export to clipboard" button for each pseudocode block
-- Generates compilable LaTeX document with required packages (algorithm, algpseudocodex, amsmath)
+- Builds compilable LaTeX documents with required packages (algorithm, algpseudocodex, amsmath)
 - Includes both global and inline macros
+- Exposes `buildLatexDocument()` and `copyLatexToClipboard()` for reuse
 
 **src/setting_tab.ts**
 - UI for plugin settings (block size, preamble path, line numbers, etc.)
@@ -76,8 +97,17 @@ npm run version
 - Algorithm borders use `currentColor` to match the active theme
 - Obsidian PDF export switches the print window to the light theme; `@media print` also forces pseudocode blocks to a white background with black text
 
+### Sidebar Preview
+- View type: `pseudocode-preview`
+- Command: `open-pseudocode-preview`; ribbon icon: `code`
+- The controller listens to workspace events and a CodeMirror 6 `updateListener`
+- Cursor or document changes are debounced before re-rendering
+- The preview keeps the last Markdown view when the preview pane itself has focus
+- Renders through `renderPseudocodeBlock()` with `width: "100%"`, no edit click handler, and no export button
+
 ### Error Handling
 - Pseudocode rendering errors display in-block with ✖ symbol
+- Sidebar preview render errors display in the preview pane
 - Preamble loading failures show Notice to user
 - Invalid LaTeX in preamble is caught and logged to console
 
