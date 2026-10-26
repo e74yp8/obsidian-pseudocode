@@ -6,6 +6,12 @@ export interface PseudocodeBlock {
 	source: string;
 	startLine: number;
 	endLine: number;
+	columnOffsets: number[];
+}
+
+interface BlockSource {
+	source: string;
+	columnOffsets: number[];
 }
 
 export type PseudocodeBlockLookup =
@@ -82,17 +88,23 @@ function getBlockSource(
 	startLine: number,
 	endLine: number,
 	inBlockquote: boolean
-): string {
+): BlockSource {
 	const lines: string[] = [];
+	const columnOffsets: number[] = [];
 
 	for (let line = startLine + 1; line < endLine; line++) {
 		const sourceLine = editor.getLine(line);
-		lines.push(
-			inBlockquote ? stripBlockquotePrefix(sourceLine) : sourceLine
-		);
+		const contentLine = inBlockquote
+			? stripBlockquotePrefix(sourceLine)
+			: sourceLine;
+		lines.push(contentLine);
+		columnOffsets.push(sourceLine.length - contentLine.length);
 	}
 
-	return lines.join("\n");
+	return {
+		source: lines.join("\n"),
+		columnOffsets,
+	};
 }
 
 export function findPseudocodeBlock(
@@ -131,17 +143,19 @@ export function findPseudocodeBlock(
 				cursorLine >= openFence.startLine &&
 				cursorLine <= line
 			) {
+				const blockSource = getBlockSource(
+					editor,
+					openFence.startLine,
+					line,
+					openFence.inBlockquote
+				);
 				return {
 					status: "found",
 					block: {
-						source: getBlockSource(
-							editor,
-							openFence.startLine,
-							line,
-							openFence.inBlockquote
-						),
+						source: blockSource.source,
 						startLine: openFence.startLine,
 						endLine: line,
+						columnOffsets: blockSource.columnOffsets,
 					},
 				};
 			}

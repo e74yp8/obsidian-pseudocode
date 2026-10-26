@@ -118,7 +118,7 @@ export class PreviewController {
 	}
 
 	refresh(force = false): void {
-		this.schedule(force);
+		this.schedule(force, force);
 	}
 
 	attachView(view: PseudocodePreviewView): void {
@@ -187,19 +187,19 @@ export class PreviewController {
 		return this.lastEditor;
 	}
 
-	private schedule(immediate = false): void {
+	private schedule(immediate = false, force = false): void {
 		if (!this.view || this.disposed) return;
 
 		if (immediate) {
 			this.refreshTimer.cancel();
-			this.update();
+			this.update(force);
 			return;
 		}
 
 		this.refreshTimer();
 	}
 
-	private update(): void {
+	private update(force = false): void {
 		if (!this.view || this.disposed) return;
 
 		const editor = this.getEditor();
@@ -208,11 +208,14 @@ export class PreviewController {
 			return;
 		}
 
-		const lookup = findPseudocodeBlock(editor, editor.getCursor());
+		const cursor = editor.getCursor();
+		const lookup = findPseudocodeBlock(editor, cursor);
 		if (lookup.status === "found") {
 			this.view.renderBlock(
 				lookup.block,
-				this.lastFilePath ?? "Untitled"
+				this.lastFilePath ?? "Untitled",
+				cursor,
+				force
 			);
 		} else if (lookup.status === "unclosed") {
 			this.view.showEmpty("unclosed");

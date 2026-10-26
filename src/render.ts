@@ -14,6 +14,7 @@ export interface RenderPseudocodeOptions {
 export interface RenderPseudocodeResult {
 	inlineMacros: string;
 	blockContent: string;
+	contentStartLine: number;
 }
 
 export function renderPseudocodeBlock(
@@ -44,7 +45,8 @@ export function renderPseudocodeBlock(
 		});
 	}
 
-	const [inlineMacros, nonMacroLines] = extractInlineMacros(source);
+	const { inlineMacros, content: nonMacroLines, contentStartLine } =
+		extractInlineMacros(source);
 	const allPreamble = plugin.preamble + inlineMacros;
 	const mathRegex = /\$(.*?)\$/g;
 	const withPreamble = nonMacroLines.replace(
@@ -70,5 +72,6 @@ export function renderPseudocodeBlock(
 	return {
 		inlineMacros,
 		blockContent: nonMacroLines,
+		contentStartLine,
 	};
 }

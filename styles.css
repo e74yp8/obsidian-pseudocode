@@ -1504,6 +1504,8 @@ If your plugin does not need CSS, delete this file.
 }
 
 .pseudocode-preview-meta {
+	flex: 1;
+	min-width: 0;
 	color: var(--text-muted);
 	font-size: var(--font-ui-smaller);
 	overflow: hidden;
@@ -1517,7 +1519,40 @@ If your plugin does not need CSS, delete this file.
 }
 
 .pseudocode-preview-render {
+	position: relative;
 	overflow-x: auto;
+}
+
+.pseudocode-preview-view .ps-line.pseudocode-preview-current-line {
+	background-color: var(--background-modifier-hover);
+	border-radius: 3px;
+}
+
+.pseudocode-preview-caret {
+	position: absolute;
+	width: 2px;
+	background-color: var(--interactive-accent);
+	border-radius: 1px;
+	pointer-events: none;
+	z-index: 2;
+	animation: pseudocode-preview-caret-blink 1s step-end infinite;
+}
+
+@keyframes pseudocode-preview-caret-blink {
+	0%,
+	49% {
+		opacity: 1;
+	}
+	50%,
+	100% {
+		opacity: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.pseudocode-preview-caret {
+		animation: none;
+	}
 }
 
 .pseudocode-preview-view .pseudocode-block {

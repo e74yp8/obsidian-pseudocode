@@ -102,7 +102,7 @@ You can easily export a compilable LaTeX file by clicking the `Export to clipboa
 
 ### Sidebar preview
 
-Open the command palette and run `Pseudocode: Open pseudocode preview` (or click the ribbon icon) to open the preview pane. The preview follows the `pseudo` code block under your cursor and updates as you edit. When the cursor is outside a block, the pane shows an empty state.
+Open the command palette and run `Pseudocode: Open pseudocode preview` (or click the ribbon icon) to open the preview pane. The preview follows the `pseudo` code block under your cursor and updates as you edit. It highlights the current cursor position directly in the rendered pseudocode and scrolls that line into view. When the cursor is outside a block, the pane shows an empty state.
 
 Use the refresh action to re-render manually, and the copy action to copy the current block as a compilable LaTeX document.
 

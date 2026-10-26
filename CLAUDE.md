@@ -60,6 +60,12 @@ npm run version
 **src/preview_view.ts**
 - Sidebar `ItemView` for the pseudocode preview
 - Shows block metadata, refresh action, copy LaTeX action, empty state, and render errors
+- Delegates cursor placement to `src/preview_cursor.ts`
+
+**src/preview_cursor.ts**
+- Maps the editor cursor to the corresponding rendered pseudocode line and character
+- Uses source token alignment against the rendered visible text, including math symbols
+- Places an overlay caret and scrolls the matched line into view
 
 **src/preview_controller.ts**
 - Opens and tracks the sidebar preview
@@ -103,6 +109,8 @@ npm run version
 - The controller listens to workspace events and a CodeMirror 6 `updateListener`
 - Cursor or document changes are debounced before re-rendering
 - The preview keeps the last Markdown view when the preview pane itself has focus
+- The cursor is shown directly in the rendered pseudocode with an overlay caret
+- The preview scrolls the mapped line into view when necessary
 - Renders through `renderPseudocodeBlock()` with `width: "100%"`, no edit click handler, and no export button
 
 ### Error Handling

@@ -3,22 +3,34 @@ import {
 	checkTranslatedMacros,
 } from "./latex_translator";
 
-export function extractInlineMacros(source: string): [string, string] {
-  const sourceLines = source.split("\n");
-  const macroStartIndex = sourceLines.findIndex(line => line.includes("\\begin{algorithm}"));
+export interface InlineMacroExtraction {
+	inlineMacros: string;
+	content: string;
+	contentStartLine: number;
+}
 
-  const macroLines = sourceLines.slice(0, macroStartIndex).join("\n");
-  const nonMacroLines = sourceLines.slice(macroStartIndex).join("\n");
+export function extractInlineMacros(source: string): InlineMacroExtraction {
+	const sourceLines = source.split("\n");
+	const foundIndex = sourceLines.findIndex((line) =>
+		line.includes("\\begin{algorithm}")
+	);
+	const macroStartIndex = foundIndex >= 0 ? foundIndex : 0;
 
-  let inlineMacros = "";
+	const macroLines = sourceLines.slice(0, macroStartIndex).join("\n");
+	const content = sourceLines.slice(macroStartIndex).join("\n");
 
-  try {
-    const translated = translateUnsupportedMacrosPerf(macroLines);
-    inlineMacros = checkTranslatedMacros(translated);
-  } catch (error) {
+	let inlineMacros = "";
 
-    console.error(error);
-  }
+	try {
+		const translated = translateUnsupportedMacrosPerf(macroLines);
+		inlineMacros = checkTranslatedMacros(translated);
+	} catch (error) {
+		console.error(error);
+	}
 
-  return [inlineMacros, nonMacroLines];
+	return {
+		inlineMacros,
+		content,
+		contentStartLine: macroStartIndex,
+	};
 }
