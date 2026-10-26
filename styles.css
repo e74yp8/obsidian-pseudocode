@@ -1486,3 +1486,66 @@ If your plugin does not need CSS, delete this file.
 		color: #000 !important;
 	}
 }
+
+.pseudocode-preview-view {
+	padding: 0;
+}
+
+.pseudocode-preview-view .ps-root {
+	background-color: transparent;
+}
+
+.pseudocode-preview-header {
+	display: flex;
+	align-items: center;
+	min-height: 2.5rem;
+	padding: 0 0.75rem;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.pseudocode-preview-meta {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.pseudocode-preview-content {
+	padding: 0.75rem;
+	overflow: auto;
+}
+
+.pseudocode-preview-render {
+	overflow-x: auto;
+}
+
+.pseudocode-preview-view .pseudocode-block {
+	width: 100% !important;
+	max-width: 100%;
+	margin: 0;
+}
+
+.pseudocode-preview-empty {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	line-height: 1.5;
+	padding: 1.5rem 0.5rem;
+	text-align: center;
+}
+
+.pseudocode-preview-error {
+	color: var(--text-error);
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-smaller);
+	line-height: 1.5;
+	text-align: left;
+	white-space: pre-wrap;
+}
+
+.pseudocode-preview-error-title {
+	color: var(--text-normal);
+	font-family: var(--font-interface);
+	font-weight: var(--font-semibold);
+	margin-bottom: 0.5rem;
+}

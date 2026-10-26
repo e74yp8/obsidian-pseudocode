@@ -1,4 +1,10 @@
-import { Editor, MarkdownView, Plugin, Notice } from "obsidian";
+import {
+	Editor,
+	MarkdownPostProcessorContext,
+	MarkdownView,
+	Plugin,
+	Notice,
+} from "obsidian";
 
 import { PseudocodeSettingTab } from "src/setting_tab";
 import { PseudocodeSuggestor } from "src/auto_complete";
@@ -12,70 +18,45 @@ import {
 	translateUnsupportedMacrosPerf,
 	checkTranslatedMacros,
 } from "src/latex_translator";
-import { createExportButton } from "src/export_button";
-import { extractInlineMacros } from "src/inline_macro";
 import {
 	registerPseudocodeEditorMode,
 	unregisterPseudocodeEditorMode,
 	refreshSyntaxHighlighting,
 } from "src/editor_syntax";
-
-import * as pseudocode from "pseudocode";
+import { PreviewController } from "src/preview_controller";
+import { renderPseudocodeBlock } from "src/render";
 
 export default class PseudocodePlugin extends Plugin {
 	settings: PseudocodeSettings;
 	preamble: string = "";
+	previewController: PreviewController | null = null;
 
 	async pseudocodeHandler(
 		source: string,
 		el: HTMLElement,
-		ctx: any
-	): Promise<any> {
-		const blockDiv = el.createDiv({ cls: "pseudocode-block" });
-		const blockWidth = this.settings.blockSize;
-		blockDiv.style.width = `${blockWidth}em`;
-		blockDiv.addEventListener("click", (event) => {
-            const target = (event.target as HTMLElement | null);
-            if(target && target.tagName !== 'BUTTON')
-                (target
-                    .closest('.pseudocode-block')
-                    ?.parentElement?.parentElement
-                    ?.querySelector('.edit-block-button') as HTMLElement | null)
-                    ?.click();
-		});
-
-		// Extract inline macros
-		const [inlineMacros, nonMacroLines] = extractInlineMacros(source);
-		const allPreamble = this.preamble + inlineMacros;
-
-		// find all $ enclosements in source, and add the preamble.
-		// TODO: Might be able to optimize.
-		const mathRegex = /\$(.*?)\$/g;
-		const withPreamble = nonMacroLines.replace(mathRegex, (_, group1) => {
-			return `$${allPreamble}${group1}$`;
-		});
-
-		const preEl = blockDiv.createEl("pre", {
-			cls: "code",
-			text: withPreamble,
-		});
-
+		_ctx: MarkdownPostProcessorContext
+	): Promise<void> {
 		try {
-			pseudocode.renderElement(preEl, this.settings.jsSettings);
-			createExportButton(this, blockDiv, inlineMacros, nonMacroLines);
+			renderPseudocodeBlock(this, source, el, {
+				width: `${this.settings.blockSize}em`,
+				clickToEdit: true,
+				exportButton: true,
+			});
 		} catch (error) {
 			console.log(error);
-			const errorSpan = blockDiv.createEl("span", {
-				text: "\u274C " + error.message,
+			el.empty();
+			const errorSpan = el.createEl("span", {
+				text: "\u274C " + (error as Error).message,
 			});
 			errorSpan.classList.add("error-message");
-			blockDiv.empty();
-			blockDiv.appendChild(errorSpan);
 		}
 	}
 
 	async onload() {
 		await this.loadSettings();
+
+		this.previewController = new PreviewController(this);
+		this.previewController.register();
 
 		registerPseudocodeEditorMode(() => this.settings.syntaxHighlight);
 
@@ -108,6 +89,8 @@ export default class PseudocodePlugin extends Plugin {
 	}
 
 	onunload() {
+		this.previewController?.dispose();
+		this.previewController = null;
 		unregisterPseudocodeEditorMode();
 		refreshSyntaxHighlighting(this.app);
 	}
@@ -158,5 +141,6 @@ export default class PseudocodePlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+		this.previewController?.refresh(true);
 	}
 }
