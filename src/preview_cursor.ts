@@ -77,12 +77,7 @@ function getLineCommandName(
 	if (!match) return null;
 
 	const name = match[1].toLowerCase();
-	return Object.prototype.hasOwnProperty.call(
-		LINE_COMMANDS,
-		name
-	)
-		? (name as LineCommandName)
-		: null;
+	return name in LINE_COMMANDS ? (name as LineCommandName) : null;
 }
 
 function isRenderableCommandLine(
