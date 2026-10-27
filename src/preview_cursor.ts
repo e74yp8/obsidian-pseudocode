@@ -22,99 +22,76 @@ interface VisibleText {
 	nodes: VisibleTextNode[];
 }
 
-const RENDERABLE_COMMANDS = new Set([
-	"state",
-	"return",
-	"print",
-	"require",
-	"ensure",
-	"input",
-	"output",
-	"if",
-	"elif",
-	"else",
-	"endif",
-	"for",
-	"forall",
-	"while",
-	"endfor",
-	"endwhile",
-	"repeat",
-	"until",
-	"upon",
-	"endupon",
-	"procedure",
-	"endprocedure",
-	"function",
-	"endfunction",
-	"caption",
-	"break",
-	"continue",
-]);
+interface LineCommandSpec {
+	prefix: string;
+	trailing?: string;
+	noEnd?: boolean;
+}
 
-const NO_END_COMMANDS = new Set([
-	"endif",
-	"endfor",
-	"endwhile",
-	"endprocedure",
-	"endfunction",
-	"endupon",
-]);
+const LINE_COMMANDS = {
+	state: { prefix: "" },
+	return: { prefix: "return " },
+	print: { prefix: "print " },
+	require: { prefix: "Require: " },
+	ensure: { prefix: "Ensure: " },
+	input: { prefix: "Input: " },
+	output: { prefix: "Output: " },
+	if: { prefix: "if ", trailing: " then" },
+	elif: { prefix: "else if ", trailing: " then" },
+	else: { prefix: "else" },
+	endif: { prefix: "end if", noEnd: true },
+	for: { prefix: "for ", trailing: " do" },
+	forall: { prefix: "for all ", trailing: " do" },
+	while: { prefix: "while ", trailing: " do" },
+	endfor: { prefix: "end for", noEnd: true },
+	endwhile: { prefix: "end while", noEnd: true },
+	repeat: { prefix: "repeat" },
+	until: { prefix: "until " },
+	upon: { prefix: "upon " },
+	endupon: { prefix: "end upon", noEnd: true },
+	procedure: { prefix: "procedure " },
+	endprocedure: { prefix: "end procedure", noEnd: true },
+	function: { prefix: "function " },
+	endfunction: { prefix: "end function", noEnd: true },
+	caption: { prefix: "Algorithm " },
+	break: { prefix: "break" },
+	continue: { prefix: "continue" },
+} as const;
 
-const TRAILING_KEYWORDS: Record<string, string> = {
-	if: " then",
-	elif: " then",
-	for: " do",
-	forall: " do",
-	while: " do",
-};
-
-const LEADING_PREFIXES: Record<string, string> = {
-	state: "",
-	return: "return ",
-	print: "print ",
-	require: "Require: ",
-	ensure: "Ensure: ",
-	input: "Input: ",
-	output: "Output: ",
-	if: "if ",
-	elif: "else if ",
-	else: "else",
-	endif: "end if",
-	for: "for ",
-	forall: "for all ",
-	while: "while ",
-	endfor: "end for",
-	endwhile: "end while",
-	repeat: "repeat",
-	until: "until ",
-	upon: "upon ",
-	endupon: "end upon",
-	procedure: "procedure ",
-	endprocedure: "end procedure",
-	function: "function ",
-	endfunction: "end function",
-	caption: "Algorithm ",
-	break: "break",
-	continue: "continue",
-};
+type LineCommandName = keyof typeof LINE_COMMANDS;
 
 const HIDDEN_VISIBLE_TEXT_SELECTOR =
 	".ps-linenum, .katex-mathml, .pseudocode-preview-caret";
 
-function getCommandName(line: string): string | null {
+function getLineCommandSpec(
+	command: LineCommandName
+): LineCommandSpec {
+	return LINE_COMMANDS[command];
+}
+
+function getLineCommandName(
+	line: string
+): LineCommandName | null {
 	const match = /^\s*\\([A-Za-z]+)\b/.exec(line);
-	return match ? match[1].toLowerCase() : null;
+	if (!match) return null;
+
+	const name = match[1].toLowerCase();
+	return Object.prototype.hasOwnProperty.call(
+		LINE_COMMANDS,
+		name
+	)
+		? (name as LineCommandName)
+		: null;
 }
 
 function isRenderableCommandLine(
 	line: string,
 	noEnd: boolean
 ): boolean {
-	const command = getCommandName(line);
-	if (!command || !RENDERABLE_COMMANDS.has(command)) return false;
-	if (noEnd && NO_END_COMMANDS.has(command)) return false;
-	return true;
+	const command = getLineCommandName(line);
+	if (!command) return false;
+
+	return !(noEnd && getLineCommandSpec(command).noEnd);
 }
 
 function findStatementStart(
@@ -355,10 +332,12 @@ function getStartVisibleOffset(
 	visibleText: string,
 	statementSource: string
 ): number {
-	const command = getCommandName(statementSource.split("\n")[0]);
+	const command = getLineCommandName(
+		statementSource.split("\n")[0]
+	);
 	if (!command) return 0;
 
-	const prefix = LEADING_PREFIXES[command];
+	const prefix = getLineCommandSpec(command).prefix;
 	if (!prefix) return 0;
 
 	const index = visibleText.indexOf(prefix);
@@ -423,8 +402,10 @@ function mapCursorToVisibleOffset(
 		return found + within;
 	}
 
-	const command = getCommandName(source.split("\n")[0]);
-	const trailing = command ? TRAILING_KEYWORDS[command] : undefined;
+	const command = getLineCommandName(source.split("\n")[0]);
+	const trailing = command
+		? getLineCommandSpec(command).trailing
+		: undefined;
 	if (trailing && visibleText.endsWith(trailing)) {
 		return visibleText.length - trailing.length;
 	}
