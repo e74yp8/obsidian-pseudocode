@@ -488,7 +488,8 @@ function resolveCursorTarget(
 	block: PseudocodeBlock,
 	result: RenderPseudocodeResult,
 	cursor: EditorPosition,
-	settings: PseudocodeJsSettings
+	settings: PseudocodeJsSettings,
+	renderedLines?: HTMLElement[]
 ): CursorTarget | null {
 	const contentLines = result.blockContent.split("\n");
 	const blockLine = cursor.line - (block.startLine + 1);
@@ -512,15 +513,12 @@ function resolveCursorTarget(
 	const { statementStart, targetLineIndex } = statementInfo;
 	if (targetLineIndex < 0) return null;
 
-	const renderedLines = Array.from(
-		renderEl.querySelectorAll<HTMLElement>(".ps-line")
-	);
-	if (renderedLines.length === 0) return null;
+	const lines =
+		renderedLines ??
+		Array.from(renderEl.querySelectorAll<HTMLElement>(".ps-line"));
+	if (lines.length === 0) return null;
 
-	const lineEl =
-		renderedLines[
-			Math.min(targetLineIndex, renderedLines.length - 1)
-		];
+	const lineEl = lines[Math.min(targetLineIndex, lines.length - 1)];
 
 	const columnOffset = block.columnOffsets[blockLine] ?? 0;
 	const sourceLine = contentLines[contentIndex];
@@ -604,7 +602,8 @@ export function applyPreviewCursor(
 	block: PseudocodeBlock,
 	result: RenderPseudocodeResult,
 	cursor: EditorPosition,
-	settings: PseudocodeJsSettings
+	settings: PseudocodeJsSettings,
+	renderedLines?: HTMLElement[]
 ): void {
 	removeCursorDecorations(renderEl);
 
@@ -613,7 +612,8 @@ export function applyPreviewCursor(
 		block,
 		result,
 		cursor,
-		settings
+		settings,
+		renderedLines
 	);
 	if (!target) return;
 

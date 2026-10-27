@@ -27,6 +27,7 @@ export class PseudocodePreviewView extends ItemView {
 	private lastSource: string | null = null;
 	private lastSettingsKey: string | null = null;
 	private lastPreamble: string | null = null;
+	private lastRenderedLines: HTMLElement[] | null = null;
 
 	constructor(leaf: WorkspaceLeaf, private plugin: PseudocodePlugin) {
 		super(leaf);
@@ -108,6 +109,7 @@ export class PseudocodePreviewView extends ItemView {
 		}
 
 		this.lastResult = null;
+		this.lastRenderedLines = null;
 		this.renderEl.empty();
 		this.rememberCachedRender(block, settingsKey);
 
@@ -123,6 +125,9 @@ export class PseudocodePreviewView extends ItemView {
 				}
 			);
 			this.lastResult = result;
+			this.lastRenderedLines = Array.from(
+				this.renderEl.querySelectorAll<HTMLElement>(".ps-line")
+			);
 			this.applyCursor(block, cursor, result);
 		} catch (error) {
 			this.showError((error as Error).message);
@@ -158,6 +163,7 @@ export class PseudocodePreviewView extends ItemView {
 		this.lastSource = null;
 		this.lastSettingsKey = null;
 		this.lastPreamble = null;
+		this.lastRenderedLines = null;
 	}
 
 	private applyCursor(
@@ -171,7 +177,8 @@ export class PseudocodePreviewView extends ItemView {
 				block,
 				result,
 				cursor,
-				this.plugin.settings.jsSettings
+				this.plugin.settings.jsSettings,
+				this.lastRenderedLines ?? undefined
 			);
 		} catch (error) {
 			console.error("Failed to place preview cursor", error);
@@ -197,6 +204,7 @@ export class PseudocodePreviewView extends ItemView {
 
 	private showError(message: string): void {
 		this.lastResult = null;
+		this.lastRenderedLines = null;
 		this.renderEl.empty();
 		this.renderEl.show();
 		this.emptyEl.hide();
