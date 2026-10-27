@@ -35,7 +35,7 @@ interface LineCommandSpec {
 	noEnd?: boolean;
 }
 
-const LINE_COMMANDS = {
+const LINE_COMMANDS: Record<string, LineCommandSpec> = {
 	state: { prefix: "" },
 	return: { prefix: "return " },
 	print: { prefix: "print " },
@@ -63,18 +63,12 @@ const LINE_COMMANDS = {
 	caption: { prefix: "Algorithm " },
 	break: { prefix: "break" },
 	continue: { prefix: "continue" },
-} as const;
+};
 
 type LineCommandName = keyof typeof LINE_COMMANDS;
 
 const HIDDEN_VISIBLE_TEXT_SELECTOR =
 	".ps-linenum, .katex-mathml, .pseudocode-preview-caret";
-
-function getLineCommandSpec(
-	command: LineCommandName
-): LineCommandSpec {
-	return LINE_COMMANDS[command];
-}
 
 function getLineCommandName(
 	line: string
@@ -98,7 +92,7 @@ function isRenderableCommandLine(
 	const command = getLineCommandName(line);
 	if (!command) return false;
 
-	return !(noEnd && getLineCommandSpec(command).noEnd);
+	return !(noEnd && LINE_COMMANDS[command].noEnd);
 }
 
 function findStatementStart(
@@ -344,7 +338,7 @@ function getStartVisibleOffset(
 	);
 	if (!command) return 0;
 
-	const prefix = getLineCommandSpec(command).prefix;
+	const prefix = LINE_COMMANDS[command].prefix;
 	if (!prefix) return 0;
 
 	const index = visibleText.indexOf(prefix);
@@ -411,7 +405,7 @@ function mapCursorToVisibleOffset(
 
 	const command = getLineCommandName(source.split("\n")[0]);
 	const trailing = command
-		? getLineCommandSpec(command).trailing
+		? LINE_COMMANDS[command].trailing
 		: undefined;
 	if (trailing && visibleText.endsWith(trailing)) {
 		return visibleText.length - trailing.length;
