@@ -28,6 +28,8 @@ export class PseudocodePreviewView extends ItemView {
 	private lastSettingsKey: string | null = null;
 	private lastPreamble: string | null = null;
 	private lastRenderedLines: HTMLElement[] | null = null;
+	private lastCaretEl: HTMLElement | null = null;
+	private lastCurrentLineEl: HTMLElement | null = null;
 
 	constructor(leaf: WorkspaceLeaf, private plugin: PseudocodePlugin) {
 		super(leaf);
@@ -110,6 +112,7 @@ export class PseudocodePreviewView extends ItemView {
 
 		this.lastResult = null;
 		this.lastRenderedLines = null;
+		this.removeCursorDecorations();
 		this.renderEl.empty();
 		this.rememberCachedRender(block, settingsKey);
 
@@ -164,6 +167,18 @@ export class PseudocodePreviewView extends ItemView {
 		this.lastSettingsKey = null;
 		this.lastPreamble = null;
 		this.lastRenderedLines = null;
+		this.removeCursorDecorations();
+	}
+
+	private removeCursorDecorations(): void {
+		this.lastCaretEl?.remove();
+		if (this.lastCurrentLineEl) {
+			this.lastCurrentLineEl.classList.remove(
+				"pseudocode-preview-current-line"
+			);
+		}
+		this.lastCaretEl = null;
+		this.lastCurrentLineEl = null;
 	}
 
 	private applyCursor(
@@ -172,7 +187,8 @@ export class PseudocodePreviewView extends ItemView {
 		result: RenderPseudocodeResult
 	): void {
 		try {
-			applyPreviewCursor(
+			this.removeCursorDecorations();
+			const placed = applyPreviewCursor(
 				this.renderEl,
 				block,
 				result,
@@ -180,6 +196,10 @@ export class PseudocodePreviewView extends ItemView {
 				this.plugin.settings.jsSettings,
 				this.lastRenderedLines ?? undefined
 			);
+			if (placed) {
+				this.lastCaretEl = placed.caretEl;
+				this.lastCurrentLineEl = placed.lineEl;
+			}
 		} catch (error) {
 			console.error("Failed to place preview cursor", error);
 		}
@@ -205,6 +225,7 @@ export class PseudocodePreviewView extends ItemView {
 	private showError(message: string): void {
 		this.lastResult = null;
 		this.lastRenderedLines = null;
+		this.removeCursorDecorations();
 		this.renderEl.empty();
 		this.renderEl.show();
 		this.emptyEl.hide();

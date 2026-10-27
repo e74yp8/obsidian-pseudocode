@@ -29,6 +29,11 @@ interface CursorTarget {
 	renderRect: DOMRect;
 }
 
+export interface PlacedCaret {
+	caretEl: HTMLElement;
+	lineEl: HTMLElement;
+}
+
 interface LineCommandSpec {
 	prefix: string;
 	trailing?: string;
@@ -428,16 +433,7 @@ function findTextPosition(
 	};
 }
 
-function removeCursorDecorations(renderEl: HTMLElement): void {
-	renderEl
-		.querySelectorAll(".pseudocode-preview-caret")
-		.forEach((element) => element.remove());
-	renderEl
-		.querySelectorAll(".pseudocode-preview-current-line")
-		.forEach((element) =>
-			element.classList.remove("pseudocode-preview-current-line")
-		);
-}
+
 
 function scrollIntoView(
 	renderEl: HTMLElement,
@@ -553,7 +549,10 @@ function resolveCursorTarget(
 	};
 }
 
-function placeCaret(renderEl: HTMLElement, target: CursorTarget): void {
+function placeCaret(
+	renderEl: HTMLElement,
+	target: CursorTarget
+): PlacedCaret {
 	target.lineEl.classList.add("pseudocode-preview-current-line");
 
 	const range = document.createRange();
@@ -583,6 +582,8 @@ function placeCaret(renderEl: HTMLElement, target: CursorTarget): void {
 	renderEl.appendChild(caretEl);
 
 	scrollIntoView(renderEl, target.lineEl, caretRect);
+
+	return { caretEl, lineEl: target.lineEl };
 }
 
 export function applyPreviewCursor(
@@ -592,9 +593,7 @@ export function applyPreviewCursor(
 	cursor: EditorPosition,
 	settings: PseudocodeJsSettings,
 	renderedLines?: HTMLElement[]
-): void {
-	removeCursorDecorations(renderEl);
-
+): PlacedCaret | null {
 	const target = resolveCursorTarget(
 		renderEl,
 		block,
@@ -603,7 +602,7 @@ export function applyPreviewCursor(
 		settings,
 		renderedLines
 	);
-	if (!target) return;
+	if (!target) return null;
 
-	placeCaret(renderEl, target);
+	return placeCaret(renderEl, target);
 }
