@@ -135,7 +135,7 @@ export class PseudocodePreviewView extends ItemView {
 	}
 
 	private getSettingsKey(): string {
-		return JSON.stringify(this.plugin.settings.jsSettings) ?? "";
+		return JSON.stringify(this.plugin.settings.jsSettings);
 	}
 
 	private matchesCachedRender(
