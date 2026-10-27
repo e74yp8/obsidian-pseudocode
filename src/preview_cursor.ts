@@ -22,6 +22,13 @@ interface VisibleText {
 	nodes: VisibleTextNode[];
 }
 
+interface CursorTarget {
+	lineEl: HTMLElement;
+	position: { node: Text; offset: number } | null;
+	lineRect: DOMRect;
+	renderRect: DOMRect;
+}
+
 interface LineCommandSpec {
 	prefix: string;
 	trailing?: string;
@@ -482,25 +489,23 @@ function scrollIntoView(
 	}
 }
 
-export function applyPreviewCursor(
+function resolveCursorTarget(
 	renderEl: HTMLElement,
 	block: PseudocodeBlock,
 	result: RenderPseudocodeResult,
 	cursor: EditorPosition,
 	settings: PseudocodeJsSettings
-): void {
-	removeCursorDecorations(renderEl);
-
+): CursorTarget | null {
 	const contentLines = result.blockContent.split("\n");
 	const blockLine = cursor.line - (block.startLine + 1);
 
 	if (blockLine < 0 || blockLine >= block.columnOffsets.length) {
-		return;
+		return null;
 	}
 
 	const contentIndex = blockLine - result.contentStartLine;
 	if (contentIndex < 0 || contentIndex >= contentLines.length) {
-		return;
+		return null;
 	}
 
 	const statementStart = findStatementStart(
@@ -508,7 +513,7 @@ export function applyPreviewCursor(
 		contentIndex,
 		settings.noEnd
 	);
-	if (statementStart === null) return;
+	if (statementStart === null) return null;
 
 	const targetLineIndex =
 		countRenderableLines(
@@ -516,12 +521,12 @@ export function applyPreviewCursor(
 			statementStart,
 			settings.noEnd
 		) - 1;
-	if (targetLineIndex < 0) return;
+	if (targetLineIndex < 0) return null;
 
 	const renderedLines = Array.from(
 		renderEl.querySelectorAll<HTMLElement>(".ps-line")
 	);
-	if (renderedLines.length === 0) return;
+	if (renderedLines.length === 0) return null;
 
 	const lineEl =
 		renderedLines[
@@ -551,7 +556,7 @@ export function applyPreviewCursor(
 
 	const statementSource = statementLines.join("\n");
 	const visible = collectVisibleText(lineEl);
-	if (!visible.text) return;
+	if (!visible.text) return null;
 
 	const startVisible = getStartVisibleOffset(
 		visible.text,
@@ -565,35 +570,63 @@ export function applyPreviewCursor(
 	);
 	const position = findTextPosition(visible, visibleOffset);
 
-	lineEl.classList.add("pseudocode-preview-current-line");
+	return {
+		lineEl,
+		position,
+		lineRect: lineEl.getBoundingClientRect(),
+		renderRect: renderEl.getBoundingClientRect(),
+	};
+}
+
+function placeCaret(renderEl: HTMLElement, target: CursorTarget): void {
+	target.lineEl.classList.add("pseudocode-preview-current-line");
 
 	const range = document.createRange();
-	if (position) {
-		range.setStart(position.node, position.offset);
+	if (target.position) {
+		range.setStart(target.position.node, target.position.offset);
 		range.collapse(true);
 	} else {
-		range.selectNodeContents(lineEl);
+		range.selectNodeContents(target.lineEl);
 		range.collapse(false);
 	}
 
 	let caretRect = range.getBoundingClientRect();
-	const lineRect = lineEl.getBoundingClientRect();
 
 	if (caretRect.width === 0 && caretRect.height === 0) {
-		caretRect = lineRect;
+		caretRect = target.lineRect;
 	}
 
-	const renderRect = renderEl.getBoundingClientRect();
 	const caretEl = document.createElement("span");
 	caretEl.classList.add("pseudocode-preview-caret");
 	caretEl.style.left = `${
-		caretRect.left - renderRect.left + renderEl.scrollLeft
+		caretRect.left - target.renderRect.left + renderEl.scrollLeft
 	}px`;
 	caretEl.style.top = `${
-		caretRect.top - renderRect.top + renderEl.scrollTop
+		caretRect.top - target.renderRect.top + renderEl.scrollTop
 	}px`;
-	caretEl.style.height = `${caretRect.height || lineRect.height}px`;
+	caretEl.style.height = `${caretRect.height || target.lineRect.height}px`;
 	renderEl.appendChild(caretEl);
 
-	scrollIntoView(renderEl, lineEl, caretRect);
+	scrollIntoView(renderEl, target.lineEl, caretRect);
+}
+
+export function applyPreviewCursor(
+	renderEl: HTMLElement,
+	block: PseudocodeBlock,
+	result: RenderPseudocodeResult,
+	cursor: EditorPosition,
+	settings: PseudocodeJsSettings
+): void {
+	removeCursorDecorations(renderEl);
+
+	const target = resolveCursorTarget(
+		renderEl,
+		block,
+		result,
+		cursor,
+		settings
+	);
+	if (!target) return;
+
+	placeCaret(renderEl, target);
 }
