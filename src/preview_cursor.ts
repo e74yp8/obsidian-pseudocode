@@ -95,34 +95,34 @@ function isRenderableCommandLine(
 	return !(noEnd && LINE_COMMANDS[command].noEnd);
 }
 
-function findStatementStart(
+function getStatementInfo(
 	contentLines: string[],
 	contentIndex: number,
 	noEnd: boolean
-): number | null {
+): { statementStart: number; targetLineIndex: number } | null {
+	const renderableFlags = new Array(contentLines.length).fill(false);
+	const prefixCounts = new Array(contentLines.length).fill(0);
+
+	let count = 0;
+	for (let i = 0; i < contentLines.length; i++) {
+		const isRenderable = isRenderableCommandLine(contentLines[i], noEnd);
+		renderableFlags[i] = isRenderable;
+		if (isRenderable) {
+			count++;
+		}
+		prefixCounts[i] = count;
+	}
+
 	for (let line = contentIndex; line >= 0; line--) {
-		if (isRenderableCommandLine(contentLines[line], noEnd)) {
-			return line;
+		if (renderableFlags[line]) {
+			return {
+				statementStart: line,
+				targetLineIndex: prefixCounts[line] - 1,
+			};
 		}
 	}
 
 	return null;
-}
-
-function countRenderableLines(
-	contentLines: string[],
-	endIndex: number,
-	noEnd: boolean
-): number {
-	let count = 0;
-
-	for (let line = 0; line <= endIndex; line++) {
-		if (isRenderableCommandLine(contentLines[line], noEnd)) {
-			count++;
-		}
-	}
-
-	return count;
 }
 
 function isAsciiWord(char: string, mathMode: boolean): boolean {
@@ -502,19 +502,14 @@ function resolveCursorTarget(
 		return null;
 	}
 
-	const statementStart = findStatementStart(
+	const statementInfo = getStatementInfo(
 		contentLines,
 		contentIndex,
 		settings.noEnd
 	);
-	if (statementStart === null) return null;
+	if (!statementInfo) return null;
 
-	const targetLineIndex =
-		countRenderableLines(
-			contentLines,
-			statementStart,
-			settings.noEnd
-		) - 1;
+	const { statementStart, targetLineIndex } = statementInfo;
 	if (targetLineIndex < 0) return null;
 
 	const renderedLines = Array.from(
