@@ -100,29 +100,22 @@ function getStatementInfo(
 	contentIndex: number,
 	noEnd: boolean
 ): { statementStart: number; targetLineIndex: number } | null {
-	const renderableFlags = new Array(contentLines.length).fill(false);
-	const prefixCounts = new Array(contentLines.length).fill(0);
-
 	let count = 0;
-	for (let i = 0; i < contentLines.length; i++) {
-		const isRenderable = isRenderableCommandLine(contentLines[i], noEnd);
-		renderableFlags[i] = isRenderable;
-		if (isRenderable) {
+	let lastRenderable = -1;
+
+	for (let i = 0; i <= contentIndex; i++) {
+		if (isRenderableCommandLine(contentLines[i], noEnd)) {
 			count++;
-		}
-		prefixCounts[i] = count;
-	}
-
-	for (let line = contentIndex; line >= 0; line--) {
-		if (renderableFlags[line]) {
-			return {
-				statementStart: line,
-				targetLineIndex: prefixCounts[line] - 1,
-			};
+			lastRenderable = i;
 		}
 	}
 
-	return null;
+	if (lastRenderable === -1) return null;
+
+	return {
+		statementStart: lastRenderable,
+		targetLineIndex: count - 1,
+	};
 }
 
 function isAsciiWord(char: string, mathMode: boolean): boolean {
