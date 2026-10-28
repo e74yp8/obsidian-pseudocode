@@ -118,6 +118,19 @@ function getStatementInfo(
 	};
 }
 
+function computeStatementCursorOffset(
+	contentLines: string[],
+	statementStart: number,
+	contentIndex: number,
+	sourceCh: number
+): number {
+	let offset = sourceCh;
+	for (let line = statementStart; line < contentIndex; line++) {
+		offset += contentLines[line].length + 1;
+	}
+	return offset;
+}
+
 function isAsciiWord(char: string, mathMode: boolean): boolean {
 	if (mathMode) return /[A-Za-z0-9]/.test(char);
 	return /[A-Za-z0-9_]/.test(char);
@@ -515,15 +528,12 @@ function resolveCursorTarget(
 		statementStart,
 		contentIndex + 1
 	);
-	let cursorOffset = sourceCh;
-
-	for (
-		let line = statementStart;
-		line < contentIndex;
-		line++
-	) {
-		cursorOffset += contentLines[line].length + 1;
-	}
+	const cursorOffset = computeStatementCursorOffset(
+		contentLines,
+		statementStart,
+		contentIndex,
+		sourceCh
+	);
 
 	const statementSource = statementLines.join("\n");
 	const visible = collectVisibleText(lineEl);
