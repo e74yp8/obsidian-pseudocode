@@ -25,6 +25,27 @@ function getIndentRole(line: string): IndentRole {
 	return LINE_COMMANDS[command].indent ?? "none";
 }
 
+function normalizeCommandSpacing(line: string): string {
+	const match = /^(\\[A-Za-z]+)([ \t]*)(.*)$/.exec(line);
+	if (!match) return line;
+
+	const command = match[1].slice(1).toLowerCase();
+	if (
+		command !== "begin" &&
+		command !== "end" &&
+		!(command in LINE_COMMANDS)
+	) {
+		return line;
+	}
+
+	const rest = match[3];
+	if (!rest) return line;
+
+	return rest.startsWith("{") || rest.startsWith("[")
+		? `${match[1]}${rest}`
+		: `${match[1]} ${rest}`;
+}
+
 function shouldBreakBefore(
 	source: string,
 	command: string,
@@ -217,13 +238,14 @@ export function formatPseudocodeSource(
 			const content = trimmed.trim();
 			if (!content) return "";
 
-			const role = getIndentRole(content);
+			const normalized = normalizeCommandSpacing(content);
+			const role = getIndentRole(normalized);
 
 			if (role === "close" || role === "middle") {
 				depth = Math.max(0, depth - 1);
 			}
 
-			const formatted = `${options.indentUnit.repeat(depth)}${content}`;
+			const formatted = `${options.indentUnit.repeat(depth)}${normalized}`;
 
 			if (role === "open" || role === "middle") {
 				depth++;
