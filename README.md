@@ -106,7 +106,7 @@ Use the refresh action to re-render manually, and the copy action to copy the cu
 
 ### Format pseudocode block
 
-Place the cursor inside a `pseudo` block and run `Pseudocode: Format pseudocode block`, or press `Alt+Shift+F`. The command re-indents the block based on nested control structures such as `\If`, `\For`, `\While`, `\Procedure`, `\Repeat`, and `\Elif` / `\Else`, and removes trailing whitespace.
+Place the cursor inside a `pseudo` block and run `Pseudocode: Format pseudocode block`, or press `Alt+Shift+F`. The command inserts missing line breaks, re-indents the block based on nested control structures such as `\If`, `\For`, `\While`, `\Procedure`, `\Repeat`, and `\Elif` / `\Else`, and removes trailing whitespace.
 
 Text content is preserved. Inline macros before `\begin{algorithm}` keep their existing leading indentation. The indent style and size can be configured in the plugin settings.
 

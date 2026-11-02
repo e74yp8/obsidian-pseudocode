@@ -10,6 +10,8 @@ import type { PseudocodeSettings } from "src/setting";
 
 import type PseudocodePlugin from "main";
 
+const BLOCK_QUOTE_PREFIX = /^(?:[ \t]{0,3}>[ \t]?)+/;
+
 export function formatPseudocodeBlock(
 	editor: Editor,
 	block: PseudocodeBlock,
@@ -17,39 +19,40 @@ export function formatPseudocodeBlock(
 ): number {
 	if (!block.source) return 0;
 
-	const sourceLines = block.source.split("\n");
 	const formattedLines = formatPseudocodeSource(block.source, {
 		indentUnit: getFormatIndentUnit(settings),
 	}).split("\n");
 
-	if (formattedLines.length !== sourceLines.length) return 0;
+	const openingLine = editor.getLine(block.startLine);
+	const quoteMatch = BLOCK_QUOTE_PREFIX.exec(openingLine);
+	const prefix = quoteMatch ? quoteMatch[0] : "";
+	const formattedText = formattedLines
+		.map((line) => (line ? prefix + line : prefix.trimEnd()))
+		.join("\n");
 
-	const changes: EditorChange[] = [];
+	const originalLines: string[] = [];
 
-	for (let index = 0; index < sourceLines.length; index++) {
-		const lineNumber = block.startLine + 1 + index;
-		const originalLine = editor.getLine(lineNumber);
-		const prefixLength = Math.min(
-			block.columnOffsets[index] ?? 0,
-			originalLine.length
-		);
-		const prefix = originalLine.slice(0, prefixLength);
-		const formattedLine = prefix + formattedLines[index];
-
-		if (formattedLine === originalLine) continue;
-
-		changes.push({
-			from: { line: lineNumber, ch: 0 },
-			to: { line: lineNumber, ch: originalLine.length },
-			text: formattedLine,
-		});
+	for (let line = block.startLine + 1; line < block.endLine; line++) {
+		originalLines.push(editor.getLine(line));
 	}
 
-	if (changes.length === 0) return 0;
+	if (formattedText === originalLines.join("\n")) return 0;
+
+	const lastContentLine = block.endLine - 1;
+	const changes: EditorChange[] = [
+		{
+			from: { line: block.startLine + 1, ch: 0 },
+			to: {
+				line: lastContentLine,
+				ch: editor.getLine(lastContentLine).length,
+			},
+			text: formattedText,
+		},
+	];
 
 	editor.transaction({ changes });
 
-	return changes.length;
+	return formattedLines.length;
 }
 
 export function registerFormatCommand(
