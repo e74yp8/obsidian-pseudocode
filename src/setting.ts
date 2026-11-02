@@ -13,6 +13,8 @@ export interface PseudocodeJsSettings {
 export interface PseudocodeSettings {
 	blockSize: number;
 	syntaxHighlight: boolean;
+	formatIndentStyle: "spaces" | "tab";
+	formatIndentSize: number;
 	preambleEnabled: boolean;
 	preamblePath: string;
 	preambleLoadedNotice: boolean;
@@ -22,6 +24,8 @@ export interface PseudocodeSettings {
 export const DEFAULT_SETTINGS: PseudocodeSettings = {
 	blockSize: 99,
 	syntaxHighlight: true,
+	formatIndentStyle: "spaces",
+	formatIndentSize: 4,
 	preambleEnabled: false,
 	preamblePath: "preamble.sty",
 	preambleLoadedNotice: false,

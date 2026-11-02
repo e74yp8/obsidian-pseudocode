@@ -139,6 +139,51 @@ export class PseudocodeSettingTab extends PluginSettingTab {
 					})
 			);
 
+		containerEl.createEl("h2", { text: "Formatting" });
+
+		new Setting(containerEl)
+			.setName("Indent Style")
+			.setDesc(
+				"Indentation used by the Format pseudocode block command."
+			)
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption("spaces", "Spaces")
+					.addOption("tab", "Tab")
+					.setValue(this.plugin.settings.formatIndentStyle)
+					.onChange(async (value) => {
+						this.plugin.settings.formatIndentStyle =
+							value === "tab" ? "tab" : "spaces";
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Indent Size")
+			.setDesc(
+				"Number of spaces used when Indent Style is Spaces. Valid values are 1 to 8. The default is 4."
+			)
+			.addText((text) =>
+				text
+					.setValue(
+						this.plugin.settings.formatIndentSize.toString()
+					)
+					.onChange(async (value) => {
+						const parsed = Number(value);
+
+						if (
+							!Number.isInteger(parsed) ||
+							parsed < 1 ||
+							parsed > 8
+						) {
+							return;
+						}
+
+						this.plugin.settings.formatIndentSize = parsed;
+						await this.plugin.saveSettings();
+					})
+			);
+
 		containerEl.createEl("h2", { text: "Preamble Settings" });
 
 		// Instantiate Preamble Enabled setting

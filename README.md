@@ -9,6 +9,7 @@
       - [Supported macros](#supported-macros)
     - [Export to a compilable LaTeX file](#export-to-a-compilable-latex-file)
     - [Sidebar preview](#sidebar-preview)
+    - [Format pseudocode block](#format-pseudocode-block)
   - [Installation](#installation)
   - [Credits](#credits)
 
@@ -23,6 +24,7 @@ This is a plugin for [Obsidian](https://obsidian.md/) that allows you to render 
 - [Preamble style (macros) customization.](#preamble-style-customization) (Release 1.2.0 & 1.5.0)
 - [Export a LaTeX file that can be compiled, including any required additional macros.](#export-to-a-compilable-latex-file) (Release 1.3.0)
 - [Sidebar preview that follows the pseudo block under your cursor.](#sidebar-preview)
+- [Format pseudocode block](#format-pseudocode-block) with `Alt+Shift+F`, including nested control structures.
 - Pseudocode block automatically follows the Obsidian theme and supports both light and dark modes. PDF exports use a white background with black text.
 - Syntax highlighting inside `pseudo` code blocks while editing, including native math highlighting inside `$...$`, `$$...$$`, `\(...\)`, and `\[...\]`. It can be disabled in the plugin settings.
 
@@ -101,6 +103,12 @@ You can easily export a compilable LaTeX file by clicking the `Export to clipboa
 Open the command palette and run `Pseudocode: Open pseudocode preview` (or click the ribbon icon) to open the preview pane. The preview follows the `pseudo` code block under your cursor and updates as you edit. It highlights the current cursor position directly in the rendered pseudocode and scrolls that line into view. When the cursor is outside a block, the pane shows an empty state.
 
 Use the refresh action to re-render manually, and the copy action to copy the current block as a compilable LaTeX document.
+
+### Format pseudocode block
+
+Place the cursor inside a `pseudo` block and run `Pseudocode: Format pseudocode block`, or press `Alt+Shift+F`. The command re-indents the block based on nested control structures such as `\If`, `\For`, `\While`, `\Procedure`, `\Repeat`, and `\Elif` / `\Else`, and removes trailing whitespace.
+
+Text content is preserved. Inline macros before `\begin{algorithm}` keep their existing leading indentation. The indent style and size can be configured in the plugin settings.
 
 
 ## Installation

@@ -1,5 +1,10 @@
 import type { EditorPosition } from "obsidian";
 
+import {
+	LINE_COMMANDS,
+	getLineCommandName,
+	isRenderableCommandLine,
+} from "src/pseudocode_commands";
 import type { PseudocodeBlock } from "src/pseudocode_block";
 import type { RenderPseudocodeResult } from "src/render";
 import type { PseudocodeJsSettings } from "src/setting";
@@ -34,66 +39,8 @@ export interface PlacedCaret {
 	lineEl: HTMLElement;
 }
 
-interface LineCommandSpec {
-	prefix: string;
-	trailing?: string;
-	noEnd?: boolean;
-}
-
-const LINE_COMMANDS: Record<string, LineCommandSpec> = {
-	state: { prefix: "" },
-	return: { prefix: "return " },
-	print: { prefix: "print " },
-	require: { prefix: "Require: " },
-	ensure: { prefix: "Ensure: " },
-	input: { prefix: "Input: " },
-	output: { prefix: "Output: " },
-	if: { prefix: "if ", trailing: " then" },
-	elif: { prefix: "else if ", trailing: " then" },
-	else: { prefix: "else" },
-	endif: { prefix: "end if", noEnd: true },
-	for: { prefix: "for ", trailing: " do" },
-	forall: { prefix: "for all ", trailing: " do" },
-	while: { prefix: "while ", trailing: " do" },
-	endfor: { prefix: "end for", noEnd: true },
-	endwhile: { prefix: "end while", noEnd: true },
-	repeat: { prefix: "repeat" },
-	until: { prefix: "until " },
-	upon: { prefix: "upon " },
-	endupon: { prefix: "end upon", noEnd: true },
-	procedure: { prefix: "procedure " },
-	endprocedure: { prefix: "end procedure", noEnd: true },
-	function: { prefix: "function " },
-	endfunction: { prefix: "end function", noEnd: true },
-	caption: { prefix: "Algorithm " },
-	break: { prefix: "break" },
-	continue: { prefix: "continue" },
-};
-
-type LineCommandName = keyof typeof LINE_COMMANDS;
-
 const HIDDEN_VISIBLE_TEXT_SELECTOR =
 	".ps-linenum, .katex-mathml, .pseudocode-preview-caret";
-
-function getLineCommandName(
-	line: string
-): LineCommandName | null {
-	const match = /^\s*\\([A-Za-z]+)\b/.exec(line);
-	if (!match) return null;
-
-	const name = match[1].toLowerCase();
-	return name in LINE_COMMANDS ? (name as LineCommandName) : null;
-}
-
-function isRenderableCommandLine(
-	line: string,
-	noEnd: boolean
-): boolean {
-	const command = getLineCommandName(line);
-	if (!command) return false;
-
-	return !(noEnd && LINE_COMMANDS[command].noEnd);
-}
 
 function getStatementInfo(
 	contentLines: string[],

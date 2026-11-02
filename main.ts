@@ -25,6 +25,7 @@ import {
 } from "src/editor_syntax";
 import { PreviewController } from "src/preview_controller";
 import { renderPseudocodeBlock } from "src/render";
+import { registerFormatCommand } from "src/format_command";
 
 export default class PseudocodePlugin extends Plugin {
 	settings: PseudocodeSettings;
@@ -84,6 +85,8 @@ export default class PseudocodePlugin extends Plugin {
 				editor.replaceSelection(PseudocodeBlockInit);
 			},
 		});
+
+		registerFormatCommand(this);
 
 		refreshSyntaxHighlighting(this.app);
 	}
