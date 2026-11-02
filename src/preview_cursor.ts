@@ -22,129 +22,113 @@ interface VisibleText {
 	nodes: VisibleTextNode[];
 }
 
-const RENDERABLE_COMMANDS = new Set([
-	"state",
-	"return",
-	"print",
-	"require",
-	"ensure",
-	"input",
-	"output",
-	"if",
-	"elif",
-	"else",
-	"endif",
-	"for",
-	"forall",
-	"while",
-	"endfor",
-	"endwhile",
-	"repeat",
-	"until",
-	"upon",
-	"endupon",
-	"procedure",
-	"endprocedure",
-	"function",
-	"endfunction",
-	"caption",
-	"break",
-	"continue",
-]);
+interface CursorTarget {
+	lineEl: HTMLElement;
+	position: { node: Text; offset: number } | null;
+	lineRect: DOMRect;
+	renderRect: DOMRect;
+}
 
-const NO_END_COMMANDS = new Set([
-	"endif",
-	"endfor",
-	"endwhile",
-	"endprocedure",
-	"endfunction",
-	"endupon",
-]);
+export interface PlacedCaret {
+	caretEl: HTMLElement;
+	lineEl: HTMLElement;
+}
 
-const TRAILING_KEYWORDS: Record<string, string> = {
-	if: " then",
-	elif: " then",
-	for: " do",
-	forall: " do",
-	while: " do",
+interface LineCommandSpec {
+	prefix: string;
+	trailing?: string;
+	noEnd?: boolean;
+}
+
+const LINE_COMMANDS: Record<string, LineCommandSpec> = {
+	state: { prefix: "" },
+	return: { prefix: "return " },
+	print: { prefix: "print " },
+	require: { prefix: "Require: " },
+	ensure: { prefix: "Ensure: " },
+	input: { prefix: "Input: " },
+	output: { prefix: "Output: " },
+	if: { prefix: "if ", trailing: " then" },
+	elif: { prefix: "else if ", trailing: " then" },
+	else: { prefix: "else" },
+	endif: { prefix: "end if", noEnd: true },
+	for: { prefix: "for ", trailing: " do" },
+	forall: { prefix: "for all ", trailing: " do" },
+	while: { prefix: "while ", trailing: " do" },
+	endfor: { prefix: "end for", noEnd: true },
+	endwhile: { prefix: "end while", noEnd: true },
+	repeat: { prefix: "repeat" },
+	until: { prefix: "until " },
+	upon: { prefix: "upon " },
+	endupon: { prefix: "end upon", noEnd: true },
+	procedure: { prefix: "procedure " },
+	endprocedure: { prefix: "end procedure", noEnd: true },
+	function: { prefix: "function " },
+	endfunction: { prefix: "end function", noEnd: true },
+	caption: { prefix: "Algorithm " },
+	break: { prefix: "break" },
+	continue: { prefix: "continue" },
 };
 
-const LEADING_PREFIXES: Record<string, string> = {
-	state: "",
-	return: "return ",
-	print: "print ",
-	require: "Require: ",
-	ensure: "Ensure: ",
-	input: "Input: ",
-	output: "Output: ",
-	if: "if ",
-	elif: "else if ",
-	else: "else",
-	endif: "end if",
-	for: "for ",
-	forall: "for all ",
-	while: "while ",
-	endfor: "end for",
-	endwhile: "end while",
-	repeat: "repeat",
-	until: "until ",
-	upon: "upon ",
-	endupon: "end upon",
-	procedure: "procedure ",
-	endprocedure: "end procedure",
-	function: "function ",
-	endfunction: "end function",
-	caption: "Algorithm ",
-	break: "break",
-	continue: "continue",
-};
+type LineCommandName = keyof typeof LINE_COMMANDS;
 
 const HIDDEN_VISIBLE_TEXT_SELECTOR =
 	".ps-linenum, .katex-mathml, .pseudocode-preview-caret";
 
-function getCommandName(line: string): string | null {
+function getLineCommandName(
+	line: string
+): LineCommandName | null {
 	const match = /^\s*\\([A-Za-z]+)\b/.exec(line);
-	return match ? match[1].toLowerCase() : null;
+	if (!match) return null;
+
+	const name = match[1].toLowerCase();
+	return name in LINE_COMMANDS ? (name as LineCommandName) : null;
 }
 
 function isRenderableCommandLine(
 	line: string,
 	noEnd: boolean
 ): boolean {
-	const command = getCommandName(line);
-	if (!command || !RENDERABLE_COMMANDS.has(command)) return false;
-	if (noEnd && NO_END_COMMANDS.has(command)) return false;
-	return true;
+	const command = getLineCommandName(line);
+	if (!command) return false;
+
+	return !(noEnd && LINE_COMMANDS[command].noEnd);
 }
 
-function findStatementStart(
+function getStatementInfo(
 	contentLines: string[],
 	contentIndex: number,
 	noEnd: boolean
-): number | null {
-	for (let line = contentIndex; line >= 0; line--) {
-		if (isRenderableCommandLine(contentLines[line], noEnd)) {
-			return line;
+): { statementStart: number; targetLineIndex: number } | null {
+	let count = 0;
+	let lastRenderable = -1;
+
+	for (let i = 0; i <= contentIndex; i++) {
+		if (isRenderableCommandLine(contentLines[i], noEnd)) {
+			count++;
+			lastRenderable = i;
 		}
 	}
 
-	return null;
+	if (lastRenderable === -1) return null;
+
+	return {
+		statementStart: lastRenderable,
+		targetLineIndex: count - 1,
+	};
 }
 
-function countRenderableLines(
+function computeStatementCursorOffset(
 	contentLines: string[],
-	endIndex: number,
-	noEnd: boolean
+	statementStart: number,
+	contentIndex: number,
+	sourceCh: number
 ): number {
-	let count = 0;
-
-	for (let line = 0; line <= endIndex; line++) {
-		if (isRenderableCommandLine(contentLines[line], noEnd)) {
-			count++;
-		}
+	let offset = sourceCh;
+	for (let line = statementStart; line < contentIndex; line++) {
+		offset += contentLines[line].length + 1;
 	}
-
-	return count;
+	return offset;
 }
 
 function isAsciiWord(char: string, mathMode: boolean): boolean {
@@ -355,10 +339,12 @@ function getStartVisibleOffset(
 	visibleText: string,
 	statementSource: string
 ): number {
-	const command = getCommandName(statementSource.split("\n")[0]);
+	const command = getLineCommandName(
+		statementSource.split("\n")[0]
+	);
 	if (!command) return 0;
 
-	const prefix = LEADING_PREFIXES[command];
+	const prefix = LINE_COMMANDS[command].prefix;
 	if (!prefix) return 0;
 
 	const index = visibleText.indexOf(prefix);
@@ -423,8 +409,10 @@ function mapCursorToVisibleOffset(
 		return found + within;
 	}
 
-	const command = getCommandName(source.split("\n")[0]);
-	const trailing = command ? TRAILING_KEYWORDS[command] : undefined;
+	const command = getLineCommandName(source.split("\n")[0]);
+	const trailing = command
+		? LINE_COMMANDS[command].trailing
+		: undefined;
 	if (trailing && visibleText.endsWith(trailing)) {
 		return visibleText.length - trailing.length;
 	}
@@ -458,16 +446,7 @@ function findTextPosition(
 	};
 }
 
-function removeCursorDecorations(renderEl: HTMLElement): void {
-	renderEl
-		.querySelectorAll(".pseudocode-preview-caret")
-		.forEach((element) => element.remove());
-	renderEl
-		.querySelectorAll(".pseudocode-preview-current-line")
-		.forEach((element) =>
-			element.classList.remove("pseudocode-preview-current-line")
-		);
-}
+
 
 function scrollIntoView(
 	renderEl: HTMLElement,
@@ -501,51 +480,42 @@ function scrollIntoView(
 	}
 }
 
-export function applyPreviewCursor(
+function resolveCursorTarget(
 	renderEl: HTMLElement,
 	block: PseudocodeBlock,
 	result: RenderPseudocodeResult,
 	cursor: EditorPosition,
-	settings: PseudocodeJsSettings
-): void {
-	removeCursorDecorations(renderEl);
-
+	settings: PseudocodeJsSettings,
+	renderedLines?: HTMLElement[]
+): CursorTarget | null {
 	const contentLines = result.blockContent.split("\n");
 	const blockLine = cursor.line - (block.startLine + 1);
 
 	if (blockLine < 0 || blockLine >= block.columnOffsets.length) {
-		return;
+		return null;
 	}
 
 	const contentIndex = blockLine - result.contentStartLine;
 	if (contentIndex < 0 || contentIndex >= contentLines.length) {
-		return;
+		return null;
 	}
 
-	const statementStart = findStatementStart(
+	const statementInfo = getStatementInfo(
 		contentLines,
 		contentIndex,
 		settings.noEnd
 	);
-	if (statementStart === null) return;
+	if (!statementInfo) return null;
 
-	const targetLineIndex =
-		countRenderableLines(
-			contentLines,
-			statementStart,
-			settings.noEnd
-		) - 1;
-	if (targetLineIndex < 0) return;
+	const { statementStart, targetLineIndex } = statementInfo;
+	if (targetLineIndex < 0) return null;
 
-	const renderedLines = Array.from(
-		renderEl.querySelectorAll<HTMLElement>(".ps-line")
-	);
-	if (renderedLines.length === 0) return;
+	const lines =
+		renderedLines ??
+		Array.from(renderEl.querySelectorAll<HTMLElement>(".ps-line"));
+	if (lines.length === 0) return null;
 
-	const lineEl =
-		renderedLines[
-			Math.min(targetLineIndex, renderedLines.length - 1)
-		];
+	const lineEl = lines[Math.min(targetLineIndex, lines.length - 1)];
 
 	const columnOffset = block.columnOffsets[blockLine] ?? 0;
 	const sourceLine = contentLines[contentIndex];
@@ -558,19 +528,16 @@ export function applyPreviewCursor(
 		statementStart,
 		contentIndex + 1
 	);
-	let cursorOffset = sourceCh;
-
-	for (
-		let line = statementStart;
-		line < contentIndex;
-		line++
-	) {
-		cursorOffset += contentLines[line].length + 1;
-	}
+	const cursorOffset = computeStatementCursorOffset(
+		contentLines,
+		statementStart,
+		contentIndex,
+		sourceCh
+	);
 
 	const statementSource = statementLines.join("\n");
 	const visible = collectVisibleText(lineEl);
-	if (!visible.text) return;
+	if (!visible.text) return null;
 
 	const startVisible = getStartVisibleOffset(
 		visible.text,
@@ -584,35 +551,68 @@ export function applyPreviewCursor(
 	);
 	const position = findTextPosition(visible, visibleOffset);
 
-	lineEl.classList.add("pseudocode-preview-current-line");
+	return {
+		lineEl,
+		position,
+		lineRect: lineEl.getBoundingClientRect(),
+		renderRect: renderEl.getBoundingClientRect(),
+	};
+}
+
+function placeCaret(
+	renderEl: HTMLElement,
+	target: CursorTarget
+): PlacedCaret {
+	target.lineEl.classList.add("pseudocode-preview-current-line");
 
 	const range = document.createRange();
-	if (position) {
-		range.setStart(position.node, position.offset);
+	if (target.position) {
+		range.setStart(target.position.node, target.position.offset);
 		range.collapse(true);
 	} else {
-		range.selectNodeContents(lineEl);
+		range.selectNodeContents(target.lineEl);
 		range.collapse(false);
 	}
 
 	let caretRect = range.getBoundingClientRect();
-	const lineRect = lineEl.getBoundingClientRect();
 
 	if (caretRect.width === 0 && caretRect.height === 0) {
-		caretRect = lineRect;
+		caretRect = target.lineRect;
 	}
 
-	const renderRect = renderEl.getBoundingClientRect();
 	const caretEl = document.createElement("span");
 	caretEl.classList.add("pseudocode-preview-caret");
 	caretEl.style.left = `${
-		caretRect.left - renderRect.left + renderEl.scrollLeft
+		caretRect.left - target.renderRect.left + renderEl.scrollLeft
 	}px`;
 	caretEl.style.top = `${
-		caretRect.top - renderRect.top + renderEl.scrollTop
+		caretRect.top - target.renderRect.top + renderEl.scrollTop
 	}px`;
-	caretEl.style.height = `${caretRect.height || lineRect.height}px`;
+	caretEl.style.height = `${caretRect.height || target.lineRect.height}px`;
 	renderEl.appendChild(caretEl);
 
-	scrollIntoView(renderEl, lineEl, caretRect);
+	scrollIntoView(renderEl, target.lineEl, caretRect);
+
+	return { caretEl, lineEl: target.lineEl };
+}
+
+export function applyPreviewCursor(
+	renderEl: HTMLElement,
+	block: PseudocodeBlock,
+	result: RenderPseudocodeResult,
+	cursor: EditorPosition,
+	settings: PseudocodeJsSettings,
+	renderedLines?: HTMLElement[]
+): PlacedCaret | null {
+	const target = resolveCursorTarget(
+		renderEl,
+		block,
+		result,
+		cursor,
+		settings,
+		renderedLines
+	);
+	if (!target) return null;
+
+	return placeCaret(renderEl, target);
 }
