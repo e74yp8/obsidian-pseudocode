@@ -33,6 +33,8 @@ export const PSEUDO_KEYWORDS: string[] = [
 	"\\If{}",
 	"\\Else",
 	"\\Elif{}",
+	"\\ElsIf{}",
+	"\\ElseIf{}",
 	"\\EndIf",
 	"\\While{}",
 	"\\EndWhile",

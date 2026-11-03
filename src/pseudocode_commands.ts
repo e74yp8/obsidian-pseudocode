@@ -5,6 +5,12 @@ export interface LineCommandSpec {
 	indent?: "open" | "close" | "middle";
 }
 
+const ELIF_SPEC: LineCommandSpec = {
+	prefix: "else if ",
+	trailing: " then",
+	indent: "middle",
+};
+
 export const LINE_COMMANDS: Record<string, LineCommandSpec> = {
 	state: { prefix: "" },
 	return: { prefix: "return " },
@@ -14,7 +20,9 @@ export const LINE_COMMANDS: Record<string, LineCommandSpec> = {
 	input: { prefix: "Input: " },
 	output: { prefix: "Output: " },
 	if: { prefix: "if ", trailing: " then", indent: "open" },
-	elif: { prefix: "else if ", trailing: " then", indent: "middle" },
+	elif: ELIF_SPEC,
+	elsif: ELIF_SPEC,
+	elseif: ELIF_SPEC,
 	else: { prefix: "else", indent: "middle" },
 	endif: { prefix: "end if", noEnd: true, indent: "close" },
 	for: { prefix: "for ", trailing: " do", indent: "open" },
